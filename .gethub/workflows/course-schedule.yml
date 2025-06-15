@@ -1,0 +1,38 @@
+name: 自动生成课表
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # 每周日午夜运行
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 检出仓库
+      uses: actions/checkout@v4
+
+    - name: 运行脚本
+      run: |
+        chmod +x scripts/fetch_and_process.sh
+        ./scripts/fetch_and_process.sh
+      env:
+        API_USERNAME: ${{ secrets.API_USERNAME }}  # API用户名，需在仓库设置中配置
+        API_PASSWORD: ${{ secrets.API_PASSWORD }}  # API密码，需在仓库设置中配置
+        COURSE_API_URL: ${{ secrets.COURSE_API_URL }}  # 课程API地址，需在仓库设置中配置
+        DATE_API_URL: ${{ secrets.DATE_API_URL }}  # 日期API地址，需在仓库设置中配置
+        OUTPUT_DIR: 'docs'  # 输出目录，用于GitHub Pages
+        HTML_TEMPLATE: 'index.html'  # HTML模板文件路径
+
+    - name: 提交更改
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add docs/
+        if [[ -n $(git status --porcelain) ]]; then
+          git commit -m "自动更新课表"
+          git push
+        else
+          echo "没有更改需要提交"
+        fi    
