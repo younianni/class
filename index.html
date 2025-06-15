@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>课程表</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            overflow-x: auto;
+        }
+
+        .header {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .header:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .header-left {
+            flex: 1;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .semester-info {
+            color: #666;
+            margin-bottom: 10px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .current-weekday {
+            background-color: #1890ff;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 5px;
+        }
+
+        .export-btn {
+            background-color: #1890ff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .export-btn:hover {
+            background-color: #40a9ff;
+        }
+
+        .export-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        .header.hidden {
+            height: 20px;
+            overflow: hidden;
+            padding: 0;
+            margin-bottom: 10px;
+        }
+
+        .header.hidden .header-content {
+            display: none;
+        }
+
+        .header.hidden::after {
+            content: "点击显示表头";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #666;
+            font-size: 14px;
+        }
+
+        .schedule {
+            display: grid;
+            grid-template-columns: 80px repeat(7, minmax(180px, 1fr));
+            gap: 1px;
+            background-color: #e8e8e8;
+            padding: 1px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            min-width: 1400px;
+        }
+
+        .time-slot {
+            background-color: #fff;
+            padding: 10px 5px;
+            text-align: center;
+            font-weight: bold;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #333;
+        }
+
+        .day-column {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            background-color: #fff;
+            min-height: 150px;
+        }
+
+        .day-header {
+            background-color: #f5f5f5;
+            padding: 10px 5px;
+            text-align: center;
+            font-weight: bold;
+            border-radius: 4px;
+            height: 45px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            border-bottom: 2px solid #e8e8e8;
+            font-size: 0.9em;
+        }
+
+        .day-date {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .course-card {
+            background-color: #fff;
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+            padding: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            height: 150px;
+            display: flex;
+            flex-direction: column;
+            margin: 1px;
+            overflow: hidden;
+        }
+
+        .course-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: #1890ff;
+        }
+
+        .course-name {
+            font-weight: bold;
+            color: #1890ff;
+            margin-bottom: 6px;
+            font-size: 0.95em;
+            line-height: 1.3;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            word-break: break-all;
+        }
+
+        .course-info {
+            font-size: 0.85em;
+            color: #666;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .course-teacher {
+            color: #52c41a;
+            margin-bottom: 3px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: normal;
+            word-break: break-all;
+            line-height: 1.2;
+        }
+
+        .course-location {
+            color: #722ed1;
+            margin-bottom: 3px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: normal;
+            word-break: break-all;
+            line-height: 1.2;
+        }
+
+        .course-time {
+            color: #fa8c16;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: normal;
+            word-break: break-all;
+            line-height: 1.2;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 0;
+            }
+
+            .header {
+                padding: 15px;
+                margin-bottom: 10px;
+            }
+
+            .header.hidden {
+                height: 15px;
+            }
+
+            .schedule {
+                padding: 1px;
+                gap: 1px;
+                min-width: 100%;
+                grid-template-columns: 50px repeat(7, minmax(100px, 1fr));
+            }
+
+            .course-card {
+                padding: 6px;
+                height: 180px;
+            }
+
+            .course-name {
+                font-size: 0.9em;
+            }
+
+            .course-info {
+                font-size: 0.8em;
+            }
+
+            .time-slot {
+                padding: 8px 4px;
+                font-size: 0.85em;
+            }
+
+            .day-header {
+                padding: 6px 4px;
+                font-size: 0.85em;
+            }
+
+            .export-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header" id="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1>课程表</h1>
+                    <div class="semester-info">
+                        <p id="semester"></p>
+                        <p id="current-week"></p>
+                        <p id="current-date"></p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button class="export-btn" id="exportBtn">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                        </svg>
+                        导出图片
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="schedule" id="schedule">
+            <!-- Schedule will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script>
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return `${date.getMonth() + 1}月${date.getDate()}日`;
+        }
+
+        function getWeekDates(startDate, weekNumber) {
+            const dates = [];
+            const start = new Date(startDate);
+            start.setDate(start.getDate() + (weekNumber - 1) * 7);
+            
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(start);
+                date.setDate(start.getDate() + i);
+                dates.push(formatDate(date));
+            }
+            
+            return dates;
+        }
+
+        function getCurrentWeekday() {
+            const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+            return weekdays[new Date().getDay()];
+        }
+
+        function loadSchedule() {
+            // 更新学期和当前周信息
+            document.getElementById('semester').textContent = dateData.result.currentSemester;
+            document.getElementById('current-week').textContent = `第${dateData.result.nowweek}周`;
+            const currentWeekday = getCurrentWeekday();
+            document.getElementById('current-date').innerHTML = 
+                `当前日期：${formatDate(dateData.result.shortDate)} <span class="current-weekday">星期${currentWeekday}</span>`;
+
+            // 创建时间槽
+            const timeSlots = ['第1-2节', '第3-4节', '第5-6节', '第7-8节', '第9-10节', '第11-12节'];
+            const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
+            const weekDates = getWeekDates(dateData.result.startDate, dateData.result.nowweek);
+
+            // 创建表头
+            const schedule = document.getElementById('schedule');
+            schedule.innerHTML = `
+                <div class="time-slot"></div>
+                ${weekDays.map((day, index) => `
+                    <div class="day-header">
+                        星期${day}
+                        <span class="day-date">${weekDates[index]}</span>
+                    </div>
+                `).join('')}
+            `;
+
+            // 为每个时间槽创建行
+            timeSlots.forEach((timeSlot, timeIndex) => {
+                const row = document.createElement('div');
+                row.style.gridColumn = '1';
+                row.style.gridRow = timeIndex + 2;
+                row.className = 'time-slot';
+                row.textContent = timeSlot;
+                schedule.appendChild(row);
+
+                // 为每天创建课程卡片
+                weekDays.forEach((day, dayIndex) => {
+                    const courses = courseData.result.records.filter(course => {
+                        const startLesson = course.startLessonScope;
+                        const endLesson = course.endLessonScope;
+                        const timeSlotStart = timeIndex * 2 + 1;
+                        const timeSlotEnd = timeIndex * 2 + 2;
+                        
+                        return course.week === day && 
+                               ((startLesson === timeSlotStart && endLesson === timeSlotEnd) ||
+                                (startLesson === timeSlotStart && endLesson > timeSlotEnd) ||
+                                (startLesson < timeSlotStart && endLesson === timeSlotEnd));
+                    });
+
+                    const dayColumn = document.createElement('div');
+                    dayColumn.style.gridColumn = dayIndex + 2;
+                    dayColumn.style.gridRow = timeIndex + 2;
+                    dayColumn.className = 'day-column';
+
+                    courses.forEach(course => {
+                        const courseCard = document.createElement('div');
+                        courseCard.className = 'course-card';
+                        courseCard.innerHTML = `
+                            <div class="course-name">${course.courseName}</div>
+                            <div class="course-info">
+                                <div class="course-teacher">教师：${course.teacherNames}</div>
+                                <div class="course-location">教室：${course.classroomName}</div>
+                                <div class="course-time">时间：第${course.startLessonScope}-${course.endLessonScope}节</div>
+                            </div>
+                        `;
+                        dayColumn.appendChild(courseCard);
+                    });
+
+                    schedule.appendChild(dayColumn);
+                });
+            });
+        }
+
+        // 表头显示/隐藏功能
+        const header = document.getElementById('header');
+        header.addEventListener('click', function(e) {
+            if (e.target.closest('.export-btn')) return; // 如果点击的是导出按钮，不触发隐藏
+            this.classList.toggle('hidden');
+        });
+
+        // 导出图片功能
+        document.getElementById('exportBtn').addEventListener('click', async function() {
+            const schedule = document.getElementById('schedule');
+            try {
+                const canvas = await html2canvas(schedule, {
+                    scale: 2, // 提高清晰度
+                    backgroundColor: '#f0f2f5',
+                    logging: false,
+                    useCORS: true
+                });
+                
+                const link = document.createElement('a');
+                link.download = `课程表_${formatDate(dateData.result.shortDate)}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch (error) {
+                console.error('导出图片失败:', error);
+                alert('导出图片失败，请重试');
+            }
+        });
+
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', loadSchedule);
+    </script>
+</body>
+</html> 
